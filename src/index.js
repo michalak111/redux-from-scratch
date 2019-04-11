@@ -1,43 +1,9 @@
 import React from "react";
 import ReactDOM from "react-dom";
-
+import { connect } from "./store/connect";
+import { Store } from "./store";
+import { StoreProvider } from "./store/provider";
 import "./styles.css";
-
-class Store {
-  constructor(reducer, initialState) {
-    this.state = initialState || {};
-    this.reducer = reducer;
-    this.listeners = [];
-    this.dispatch = this.dispatch.bind(this);
-  }
-
-  subscribe(fn) {
-    this.listeners.push(fn);
-    return {
-      unsubscribe: () => {
-        this.listeners = this.listeners.filter(el => el !== fn);
-      }
-    };
-  }
-
-  dispatch(action) {
-    this.state = this.reducer(this.state, action);
-    this.propagateState();
-  }
-
-  propagateState() {
-    this.listeners.map(fn => fn());
-  }
-
-  getState() {
-    return this.state;
-  }
-
-  getDispatch() {
-    console.log(this);
-    return this.dispatch;
-  }
-}
 
 const reducer = (state, action) => {
   if (action.type === "RANDOM") {
@@ -60,63 +26,6 @@ const initialState = {
 
 const store = new Store(reducer, initialState);
 
-const StoreContext = React.createContext(null);
-
-class StoreProvider extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = props.store.getState();
-    this.subscribtion = null;
-  }
-
-  componentDidMount() {
-    this.subscribtion = store.subscribe(store => {
-      this.setState({ store: store });
-    });
-  }
-
-  componentWillUnmount() {
-    this.subscribtion.unsubscribe();
-  }
-
-  render() {
-    const Context = StoreContext;
-    return (
-      <Context.Provider value={{ ...this.props.store, ...this.state }}>
-        {this.props.children}
-      </Context.Provider>
-    );
-  }
-}
-
-const connect = (
-  mapStateToProps = (state, props) => {},
-  mapDispatchToProps = dispatch => {}
-) => {
-  return WrappedComponent => {
-    return class extends React.Component {
-      render() {
-        const Context = StoreContext;
-        return (
-          <Context.Consumer>
-            {({ state, dispatch }) => {
-              const mappedState = mapStateToProps(state, this.props);
-              const mappedDispatch = mapDispatchToProps(dispatch);
-              return (
-                <WrappedComponent
-                  {...this.props}
-                  {...mappedState}
-                  {...mappedDispatch}
-                />
-              );
-            }}
-          </Context.Consumer>
-        );
-      }
-    };
-  };
-};
-
 const TestConnect = ({ test, name, random }) => {
   return (
     <div>
@@ -124,12 +33,13 @@ const TestConnect = ({ test, name, random }) => {
         {test} {name}
       </b>
       <br />
-      <button onClick={random}>Random2</button>
+      <br />
+      <button onClick={random}>[Random] dispatch from connect</button>
     </div>
   );
 };
 
-const WithHOC = connect(
+const WithConnect = connect(
   (state, props) => {
     return {
       name: state.user.name
@@ -151,11 +61,11 @@ function App() {
             store.dispatch({ type: "RANDOM" });
           }}
         >
-          Randomize
+          [Random] dispatch directly to store
         </button>
         <br />
         <br />
-        <WithHOC test={"This is"} />
+        <WithConnect test={"This is"} />
       </StoreProvider>
     </div>
   );
