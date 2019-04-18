@@ -4,13 +4,14 @@ export const StoreContext = React.createContext(null);
 export class StoreProvider extends React.Component {
   constructor(props) {
     super(props);
-    this.state = props.store.getState();
+    this.state = { state: props.store.getState() }
     this.subscribtion = null;
   }
 
   componentDidMount() {
-    this.subscribtion = this.props.store.subscribe(store => {
-      this.setState({ store: store });
+    const {store} = this.props
+    this.subscribtion = store.subscribe(() => {
+      this.setState({ state: store.getState()});
     });
   }
 
